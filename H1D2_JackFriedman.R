@@ -20,6 +20,7 @@ library(dplyr)
 # 4. How many rows does your data have?
 
   nrow(vdem.full) # = 26,537 rows
+  length(vdem.full) # to get columns
 
 # 5. Get a summary for every column
 
