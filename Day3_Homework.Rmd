@@ -1,0 +1,73 @@
+---
+title: "Day 3 Homework - Jack Friedman"
+output: html_document
+---
+
+
+```{r}
+# Reading in full dataset and subsetting to include just a few variables and observations since 1900
+  # (otherwise dataframe is too large to deal with)
+vdem.full <- read.csv("~/Desktop/PSYC798W/Data/V-Dem-CY-Core-v8.csv")
+vdem <- subset(vdem.full, year > 1899, select = c(country_name, country_text_id, country_id, year, v2x_polyarchy, v2x_libdem, 
+                                                   v2x_jucon, v2xlg_legcon, v2pscomprg))
+```
+
+
+1. Identify a numeric column in your data. Find the 95th %ile value of that column.
+
+```{r}
+# Calculating 95th percentile of electoral democracy variable
+quantile(vdem$v2x_polyarchy, .95, na.rm = TRUE)
+```
+
+2. Subset your data to only include values greater than that extreme 95th %ile
+
+```{r}
+
+## Easy way (using subset function)
+
+  # Subsetting data to include only observations with electoral democracy scores (v2x_polyarchy) above the 95th percentile
+  vdem.sub1 <- subset(vdem, v2x_polyarchy > quantile(vdem$v2x_polyarchy, .95, na.rm = TRUE))
+
+
+## Long way (generates same results as subset function)
+
+  # Putting 95th percentile values in object, then subsetting data and removing NAs
+  v2x_polyarchy.95 <- quantile(vdem$v2x_polyarchy, .95, na.rm = TRUE)
+  vdem.sub95 <- vdem[vdem$v2x_polyarchy > v2x_polyarchy.95, ]
+  vdem.sub95<- na.omit(vdem.sub95)
+
+```
+
+3. Now find the lowest 5th %ile, and subset to the data that includes both the lower extremes and upper extremes
+
+```{r}
+
+## Easy way (using subset function)
+
+  # First subsetting observations with values in the 5th percentile
+  vdem.sub2 <- subset(vdem, v2x_polyarchy < quantile(vdem$v2x_polyarchy, .05, na.rm = TRUE))
+  
+  # Now subsetting observations with values in the 95th and 5th percentiles
+  vdem.sub3 <- subset(vdem, v2x_polyarchy > quantile(vdem$v2x_polyarchy, .95, na.rm = TRUE) |
+                            v2x_polyarchy < quantile(vdem$v2x_polyarchy, .05, na.rm = TRUE))
+
+
+## Long way (generates same results as subset function)
+
+  # Putting 5th percentile values in object
+  v2x_polyarchy.05 <- quantile(vdem$v2x_polyarchy, .05, na.rm = TRUE)
+  
+  # Subsetting data for just 5th percentile observations
+  vdem.sub05 <- vdem[vdem$v2x_polyarchy < v2x_polyarchy.05, ]
+  
+  # Removing NAs
+  vdem.sub05 <- subset(vdem.sub05, !is.na(v2x_polyarchy))
+  
+  # Now subsetting data for 5th and 95th percentile observations, and removing NAs
+  vdem.sub.05_95 <- vdem[(vdem$v2x_polyarchy < v2x_polyarchy.05) | (vdem$v2x_polyarchy > v2x_polyarchy.95), ]
+  vdem.sub.05_95 <- subset(vdem.sub.05_95, !is.na(v2x_polyarchy))
+
+```
+
+
