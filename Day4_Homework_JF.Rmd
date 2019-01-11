@@ -1,0 +1,134 @@
+---
+title: "Day 4 Homework"
+output: html_document
+---
+
+
+1. Identify a column in your data that *should* be a factor (whether it is or not). Check to see whether R is already treating it as a factor, and if not, convert it into a factor.
+
+```{r, include=FALSE}
+
+# Reading in data, doing initial subset
+vdem.full <- read.csv("~/Desktop/PSYC798W/Data/V-Dem-CY-Core-v8.csv")
+vdem <- subset(vdem.full, year > 1899, select = c(country_name, country_text_id, country_id, year, v2x_polyarchy, v2x_libdem, 
+                                                   v2x_jucon, v2xlg_legcon, v2pscomprg))
+
+# Identifying factor variable
+summary(vdem)
+class(vdem$country_id)
+
+# The country_id variable is numeric, but I think it should probably be a factor
+vdem$country_id <- as.factor(vdem$country_id)
+class(vdem$country_id)
+```
+
+
+2. What are the levels of the factor? How many occurrences of each level are there in the data? Are the levels ordered in a sensible/meaningful way?
+   
+```{r}
+
+# Identifying levels
+levels(vdem$country_id)
+
+```
+
+
+3. Create a new column that is a numeric "version" of the factor column, using `as.numeric()`. Use `xtabs()` to see how the values of these columns line up.
+
+```{r, include=FALSE}
+
+# Creating new numeric variable
+vdem$country_id_new <- as.numeric(vdem$country_id)
+
+# Comparing factor vs numeric versions (a little to big to fit in console)
+xtabs(~ country_id + country_id_new, vdem)
+
+```
+
+
+4. Create another column that is a copy of the factor column. Now, recode this new column so that the factor levels have new names. Use `xtabs()` or another function to double-check your coding.
+  (e.g., if you have a factor with levels "A" and "B", you could make a new column that had "condition A" and "condition B" as the level names instead)
+
+```{r}
+
+# Adding "Country" before all country codes
+vdem$country_id_new2 <- paste("Country", vdem$country_id, sep = " ")
+vdem$country_id_new2 <- as.factor(vdem$country_id_new2)
+
+```
+
+
+5. Change the order of the levels in your new factor, using three different methods:
+  a. `relevel()`
+  b. `reorder()`
+  c. `factor()`
+
+```{r, include=FALSE}
+
+# Making US first level
+vdem$country_id_relev1 <- relevel(vdem$country_id_new2, "Country 20")
+
+# Viewing first few levels
+head(levels(vdem$country_id_relev1))
+
+# reordering by year (I think)
+vdem$country_id_relev2 <- reorder(vdem$country_id_new2, vdem$year)
+head(levels(vdem$country_id_relev2))
+
+# I've got so many factor levels that the factor() function really isn't viable
+
+```
+
+
+6. Missing values
+  a. Do you have any missing values (NA) in your data? <span style="Yes, I do">red</span>
+  b. Are there any places where you *should* have missing values but they were read into R as some other value? <span style="No">red</span>
+  c. If the answer to (b) is "yes", figure out how to read in your data in a way that correctly identifies the missing value "code"
+  d. If you have any NAs in your data, describe why you think those values are missing. Does there appear to be any systematic relationship between missingness and other variables in your data? 
+
+```{r, include=FALSE}
+
+# Generating count of NAs by variable
+library(dplyr)
+vdem %>%
+  select(everything()) %>%  # replace to your needs
+  summarise_all(funs(sum(is.na(.))))
+
+# These NAs are due to the absence of country-level data, either because of poor historical records dataing to the early 1900s, or because the country did not exist. 
+
+```
+
+
+7. Find some aspect of your data that needs to be combined or merged in some way.  This could be a variety of things:
+  - multiple "sheets" in an Excel
+  - multiple files that should be combined into one data set
+  - properties that need to be merged in to one data set. For example:
+    - you have a table of subject properties (gender, handedness, etc.) that need to be merged into the item-level data
+    - you have other information on countries (population, etc.) that need to be merged in
+  - if you DON'T have this naturally-occurring issue, figure out a way to manufacture it. For example:
+    - split up your data into chunks
+    - make up some new table of information that you want to merge in
+  - Explain (in words) what you are trying to do
+
+```{r}
+
+# Adding logged GDP variable from another dataset. The idea here is to see whether GDP might have a relationship with quality of democracy 
+
+gibler.full <- read.dta("~/Desktop/data_2018F/testing data forjudiciary paper.dta")
+gibler <- subset(gibler.full, select = c(country, ccode, year, lngdpl))
+
+# Generating polity country codes in vdem for merging key
+library(countrycode)
+ccode <- countrycode(vdem$country_id, "vdem", "p4n")
+
+# Putting new country code variable in vdem dataframe
+vdem$ccode <- ccode
+
+# Left-joining data
+vdem.gibler <- left_join(gibler, vdem, by = c("ccode", "year"))
+
+head(vdem.gibler)
+```
+
+
+
