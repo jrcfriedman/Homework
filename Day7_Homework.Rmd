@@ -117,8 +117,9 @@ vdem.gibler2 <- inner_join(vdem2, gibler, by = c("ccode", "year"))
 ```{r}
 library(ggplot2)
 
-dev.off()
-ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
+# Plotting relationship between vdem democracy score (x axis) and age of democracy (y axis)
+ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = age_democ)) + geom_point(size = 1)
+
 
 ```
 
@@ -127,12 +128,47 @@ ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
 
 ```{r}
 
+# Data currently in long format. Spreading it along geographic region variable (e_regiongeo)
+
+# 1: Western Europe
+# 2: Northern Europe
+# 3: Southern Europe
+# 4: Eastern Europe
+# 5: Northern Africa
+# 6: Western Africa
+# 7: Central Africa
+# 8: Eastern Africa
+# 9: Southern Africa
+# 10: Western Asia
+# 11: Central Asia
+# 12: East Asia
+# 13: South-East Asia
+# 14: South Asia
+# 15: Oceania (including Australia and the Pacific)
+# 16: North America
+# 17: Central America
+# 18: South America
+# 19: Caribbean (including Belize, Cuba, Haiti, Dominican Republic and Guyana)
+
+
+
+vdem.gibler2.1 <- vdem.gibler2 %>% group_by(country_id) %>% distinct(year, .keep_all= TRUE)
+vdem.gibler.wide <- vdem.gibler2.1 %>% group_by(country_id) %>% spread(key = "e_regiongeo", value = "v2x_polyarchy")
+
+vdem.gibler.long <- gather(vdem.gibler.wide, key = "e_regiongeo", value = "v2x_polyarchy")
+vdem.gibler.long <- vdem.gibler2.1 %>% gather(key = "region", value = "e_regiongeo", year:v2x_polyarchy)
+
+
+# These aren't quite working. Having trouble figuring them out, which impacts my ability to do the next four questions
+
 ```
 
 
 8. Make your data "wide" enough that there are two numeric columns that might have a relationship between them. Use ggplot and `geom_point()` to plot a scatterplot of these data.
 
 ```{r}
+
+
 
 ```
 
@@ -160,11 +196,27 @@ ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
 
 ```{r}
 
+vdem.gibler.means <- vdem.gibler2.1 %>% 
+  group_by(country_id, country_name) %>% 
+  summarise(mean(v2x_polyarchy), mean(v2x_libdem), mean(v2x_jucon), mean(v2xlg_legcon), mean(v2pscomprg), mean(polity2))
+
+# Another way to do it across all columns
+  # vdem.gibler.means <- vdem.gibler2.1 %>% 
+  #   group_by(country_id) %>% 
+  #   summarize_all(funs(mean))
+
 ```
 
 13. Now create a function that computes the standard error of a mean. This is the same as what we did in class, but try to do it from scratch before looking back at the code, to see if you can remember how to do it.
 
 ```{r}
+
+meanSEs <- function(x, na.rm = TRUE) { 
+  sd(x, na.rm = na.rm)/sqrt(length(x))
+} 
+
+meanSEs(vdem.gibler.means$`mean(v2x_polyarchy)`)
+
 
 
 ```
@@ -174,6 +226,9 @@ ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
 
 ```{r}
 
+means.sds <- vdem.gibler2.1 %>% 
+  group_by(country_id, country_name) %>% 
+  summarise_at(.vars = c("v2x_polyarchy", "v2x_libdem", "v2x_jucon", "v2xlg_legcon", "v2pscomprg", "polity2"), .funs = funs("mean", "sd"))
 
 ```
 
@@ -181,6 +236,10 @@ ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
 15.  Now plot your table of means and standard errors, using geom_point() and geom_errorbar(), or using geom_pointrange(), or another geom of your choice.  Try to use +/- 1.96 times the standard error to set the upper and lower bounds of the error bar, because this will essentially give you a 95% confidence interval.
 
 ```{r}
+
+# Plotting means for each country using geom_bar
+ggplot(means.sds) + geom_bar(aes(country_name, v2x_polyarchy_mean), stat = "identity", width = .5) + 
+                    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 ```
@@ -190,12 +249,22 @@ ggplot(vdem.gibler, aes(x = v2x_polyarchy, y = polity2) + geom_point()
 
 ```{r}
 
+# Grouping by year and region
+means.sds2 <- vdem.gibler2.1 %>% 
+  group_by(year, e_regiongeo) %>% 
+  summarise_at(.vars = c("v2x_polyarchy", "v2x_libdem", "v2x_jucon", "v2xlg_legcon", "v2pscomprg", "polity2"), .funs = funs("mean", "sd"))
+
 ```
 
 
 17. Plot this new table of cell means, and map the new factor to an additional aesthetic, like color, or use it to facet your plot.  That is, this plot should look similar to the plot from #14 above, but also broken down by your new factor in some way.
 
 ```{r}
+
+# Plotting mean democracy score by region, but bars aren't lining up with labels...
+ggplot(means.sds2) + geom_bar(aes(e_regiongeo, v2x_polyarchy_mean), stat = "identity", width = .5) + 
+                    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                    scale_x_continuous(limits = c(1,20))
 
 
 ```
