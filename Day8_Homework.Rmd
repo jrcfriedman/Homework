@@ -1,0 +1,57 @@
+---
+title: "Homework 8"
+author: "Jack Friedman"
+date: "1/17/2019"
+output: html_document
+---
+
+Find two repetitive things that you would like to be able to do with your data.  This can be something having to do with coding variables, or saving plots, or running an analysis multiple times on different subsets, etc. etc.  Just try to find something where you would normally need to "copy and paste" sections of code, varying only one or two things.  Figure out how to use a loop to accomplish this.  
+
+For BOTH of these things, take the following steps:
+
+1. Articulate what you want to do (verbally)
+
+2. Give some code that illustrates the "copy and paste" method.  This can just show a couple of steps.  That is, if you would be running through a bunch of iterations, just copy and paste a couple of times, not everything.
+
+3. Work this code into a loop format, so that no copy & paste is neccesary.  You will need to set up a "counter" variable that cycles through various values (which do not have to be numeric), changing with every pass through the loop.  But you may also need to make other changes to your code to accommodate the loop.
+
+As usual, send me your .Rmd file with any data I need to replicate your results.
+
+
+
+
+
+
+
+```{r}
+
+vdem3 <- subset(vdem.entire, year > 1900, 
+                select = c(country_name, country_text_id, country_id, year, v2x_polyarchy, v2x_libdem, v2x_partipdem,
+                           v2x_delibdem, v2x_egaldem))
+
+
+
+vdem3 <- na.omit(vdem3)
+
+
+# Trying to get it to print "this country is named [insert country]" but haven't figured out how to get that to work
+countryname <- vdem3 %>% distinct(new_cn <- country_name) 
+for (counter in countryname$`new_cn <- country_name`) {
+    print(paste("this country is named", countryname))
+}
+
+
+# Trying to get it to calculate the mean across 5 different democracy indices, grouped by country, but it's not right. Not quite sure what the problem is
+variables <- c(vdem3$v2x_polyarchy, vdem3$v2x_libdem, vdem3$v2x_partipdem, vdem3$v2x_delibdem, vdem3$v2x_egaldem)
+for (counter in variables) {
+  means <- vdem3 %>% group_by(country_id) %>% summarise(means = mean(v2x_polyarchy, v2x_libdem, v2x_partipdem, v2x_delibdem, v2x_egaldem))
+  print(means)
+}
+
+
+
+```
+
+
+
+

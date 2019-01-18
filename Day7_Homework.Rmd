@@ -254,6 +254,8 @@ means.sds2 <- vdem.gibler2.1 %>%
   group_by(year, e_regiongeo) %>% 
   summarise_at(.vars = c("v2x_polyarchy", "v2x_libdem", "v2x_jucon", "v2xlg_legcon", "v2pscomprg", "polity2"), .funs = funs("mean", "sd"))
 
+
+
 ```
 
 
@@ -273,6 +275,9 @@ ggplot(means.sds2) + geom_bar(aes(e_regiongeo, v2x_polyarchy_mean), stat = "iden
 18. Save both plots in #14 and #17 into a single PDF, and save the two cell means tables as (separate) CSV files.
 
 ```{r}
+
+write.csv(means.sds, file = "means.sds")
+write.csv(means.sds2, file = "means.sds2")
 
 
 ```
