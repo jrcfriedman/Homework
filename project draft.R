@@ -1,11 +1,57 @@
 
 
+
+rm(list=ls())
+
+library
+
+
 vdem8.full <- read.csv("~/Desktop/data_2018F/V-Dem-CY-Core-v8.csv")
 
 
 # Subsetting V-dem data
 vdem8 <- subset(vdem8.full, year > 1959 & year < 2000, 
                 select = c(country_name, country_text_id, country_id, year, v2x_polyarchy))
+
+
+for (counter in vdem8$v2x_polyarchy) {
+  vdem8 <- vdem8 %>% group_by(country_id) %>% mutate(decline.01 = case_when(counter - lag(counter)) <= -0.01 ~ 1, 
+                                                     TRUE ~ 0)
+}
+vdem$decline <- c(NA, diff(vdem$v2x_polyarchy))
+vdem$decline.01 <- as.numeric(vdem$decline <= -.01)
+
+
+
+for (counter in 2:nrow(vdem)) {
+  if (counter <= -0.01) {
+    vdem$decline.01 <- 1
+  } else { 
+    vdem$decline.01 <- 0
+  }
+}
+
+matches <- list(c(2,1),c(5,2),c(6,3))
+
+decline.01 <- vector("double", length = nrow(vdem))
+for (match in matches){
+  total_goals <- c(total_goals, sum(match))
+}
+
+
+
+for (counter in 2:nrow(vdem)) {
+  if (vdem$decline.01[counter] == 0)
+    if (vdem$decline.01[lag(counter)] == 1) {
+      if # counter + 1 : counter + 3
+} }
+}
+
+# any() looks at vector of trues and falses and returns any if they're true
+
+
+
+
 
 # Creating new variable if decline from year to year was greater than -.01
 vdem8 <- vdem8 %>% 
