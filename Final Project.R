@@ -7,11 +7,11 @@ library(dplyr)
 # Reading in data
 vdem.full <- read.csv("~/Desktop/data_2018F/V-Dem-CY-Core-v8.csv")
 
-reb<-read.dta("http://willreed.org/concessions_elections.dta")
-
 # Subsetting V-dem data
 vdem <- subset(vdem.full, year > 1959 & year < 2000, 
                select = c(country_name, country_text_id, country_id, year, v2x_polyarchy))
+
+write.csv(vdem, file = "vdem.csv")
 
 
 # Change in v2x_polyarchy from one year to the next
