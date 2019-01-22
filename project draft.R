@@ -6,7 +6,7 @@ rm(list=ls())
 library
 
 
-vdem8.full <- read.csv("~/Desktop/data_2018F/V-Dem-CY-Core-v8.csv")
+vdem8.full <- read.csv("~/Desktop/PSYC798W/Data/V-Dem-CY-Core-v8.csv")
 
 
 # Subsetting V-dem data
