@@ -229,26 +229,78 @@ class(vdem$ep.diff)
 
 
 
-
-
-vdem$diff[is.na(vdem$diff)] <- 99
+# this
 vdem$ep.diff2 <- 0
-for (m in 1:20) {
-  if (!is.na(episode[m]))
-  for (i in 2:nrow(vdem)) {
-    if (vdem$episode[i] == 1 & vdem$episode[i + 1] != 1 && vdem$episode[i - m] == 1)  {
-      dd <- vdem$v2x_polyarchy[i] - vdem$v2x_polyarchy[i - (m + 1)]
-      vdem$ep.diff2[i] <- dd
-    }
+for (i in 2:nrow(vdem)) {
+  if (vdem$episode[i] == 1 & vdem$episode[i - 1] == 0 & vdem$episode[i + 1] != 1)  {
+    vdem$ep.diff2[i] <- vdem$v2x_polyarchy[i] - vdem$v2x_polyarchy[i - 1]
   }
-  
 }
 
 
 
+for (m in 1:100) {
+  for (i in 2:nrow(vdem)) {
+    leads <- vdem$episode[i:(i + m)]
+    if (vdem$episode[i] == 1 & vdem$episode[i - 1] != 1 && all(leads == 1))  {
+      dd <- vdem$v2x_polyarchy[i + m] - vdem$v2x_polyarchy[i - 1]
+      vdem$ep.diff2[i + m] <- dd
+    }
+  }
+}
+
+for (m in 1:20) {
+  for (i in 2:nrow(vdem)) {
+    leads <- vdem$episode[i:(i + m)]
+    if (vdem$episode[i] == 1 & vdem$episode[i - 1] != 1 && all(leads == 1))  {
+      dd <- vdem$v2x_polyarchy[i - 1] - vdem$v2x_polyarchy[i + m]
+      vdem$ep.diff2[i + m] <- dd
+    }
+  }
+}
+
+
+  
+  vdem <- vdem %>% 
+    group_by(country_id) %>%
+    mutate(episode.size = case_when(episode == 1 & lead(episode) == 0 & lag(episode) == 0 ~ v2x_polyarchy - lag(v2x_polyarchy),
+                                    TRUE ~ 0))
+  
+
+vdem <- vdem %>% 
+  group_by(country_id) %>%
+  mutate(episode.size = case_when(episode == 1 & lead(episode) == 0 & lag(episode) == 0 ~ v2x_polyarchy - lag(v2x_polyarchy),
+                                  TRUE ~ 0))
 
 
 
 
+> vdem$ep.diff2 <- 0
+> for (m in 1:20) {
+  +   for (i in 2:nrow(vdem)) {
+    +     leads <- vdem$episode[i + m]
+    +     if (vdem$episode[i] == 1 & vdem$episode[i - 1] != 1 && all(leads == 1))  {
+      +       dd <- vdem$v2x_polyarchy[i - 1] - vdem$v2x_polyarchy[i + m]
+      +       vdem$ep.diff2[i] <- dd
+      +     }
+    +   }
+  + }
+
+
+
+for (i in 2:nrow(vdem)) {
+  if (!is.na(vdem$episode[i])) {
+    if (vdem$episode[i] == 1 & vdem$episode[i + 1] != 1 && vdem$episode[i - 3] == 1)  {
+      dd <- vdem$v2x_polyarchy[i] - vdem$v2x_polyarchy[i - 4]
+      vdem$ep.diff2[i] <- dd
+    }
+  }
+}  
+
+
+if (!is.na(vdem$episode[i])) 
+vdem.sub$decline[i:(i + 3)]
+
+&& vdem$episode[i - m] == 1
 
 

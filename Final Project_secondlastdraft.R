@@ -1,5 +1,4 @@
-# Jack Friedman 
-# Final Project
+
 
 rm(list=ls())
 
@@ -7,15 +6,15 @@ library(dplyr)
 
 # Reading in df
 vdem.full <- read.csv("~/Desktop/PSYC798W/Data/V-Dem-CY-Core-v8.csv")
+vdem <- read.csv("~/Desktop/PSYC798W/Homework/vdem.csv")
 
-# Subsetting
 vdem <- subset(vdem.full, year > 1959 & year < 2000, 
+                select = c(country_name, country_text_id, country_id, year, v2x_polyarchy))
+
+vdem2 <- subset(vdem.full, year > 1959 & year < 2000, 
                select = c(country_name, country_text_id, country_id, year, v2x_polyarchy))
 
-# Or can read in this already subsetted csv
-# vdem <- read.csv("~/Desktop/PSYC798W/Homework/vdem.csv")
-
-
+vdemx <- vdem
 
 #################   
 #  Step 1
@@ -33,8 +32,6 @@ vdem <- vdem %>%
                              diff >= 0.02 ~ 2,
                              TRUE ~ 0))
 
-
-
 #################   
 #  Step 2
 #################  
@@ -46,8 +43,8 @@ for (i in 2:nrow(vdem)) {
   if (vdem$episode[i] == 0) {
     if (vdem$episode[i - 1] == 1 & any(next.three == 1)) {
       vdem$episode[i] <- 1
-      if ((vdem$decline[i] == 0) & (((vdem$decline[i + 1] == 2 | vdem$decline[i + 2] == 2) & (vdem$decline[i + 1] != 1) ) ) ) {
-        vdem$episode[i] <- 0
+        if ((vdem$decline[i] == 0) & (((vdem$decline[i + 1] == 2 | vdem$decline[i + 2] == 2) & (vdem$decline[i + 1] != 1) ) ) ) {
+          vdem$episode[i] <- 0
       }
     }
   }
@@ -62,14 +59,12 @@ vdem$episode[is.na(vdem$diff)] <- 99
 vdem$episode[vdem$episode == 2] <- 0
 
 
-
-
 #################   
 #  Step 3
 ################# 
 
 ## Calculating magnitude of episode decline (difference between v2x_polyarchy at the start and end of backsliding episode)
-
+  
 
 ## Episode difference lag 1
 vdem$ep.diff <- 0
@@ -153,34 +148,6 @@ for (i in 2:nrow(vdem)) {
 }
 
 
-### Alternatively...
-#### these two loops do the same thing
-
-# First loop calculates degree of backsliding for 1-year episodes
-vdem$episode.size <- 0
-for (i in 2:nrow(vdem)) {
-  if (vdem$episode[i] == 1 & vdem$episode[i - 1] == 0 & vdem$episode[i + 1] != 1)  {
-    vdem$episode.size[i] <- vdem$v2x_polyarchy[i] - vdem$v2x_polyarchy[i - 1]
-  }
-}
-
-# This nested loop calculates degree backsliding for all episodes lasting more than 1 year
-for (m in 1:100) {
-  for (i in 2:nrow(vdem)) {
-    leads <- vdem$episode[i:(i + m)]
-    if (vdem$episode[i] == 1 & vdem$episode[i - 1] != 1 && all(leads == 1))  {
-      dd <- vdem$v2x_polyarchy[i + m] - vdem$v2x_polyarchy[i - 1]
-      vdem$episode.size[i + m] <- dd
-    }
-  }
-}
-
-
-# However, as I'll point out below, none of the code in this section (Step 3) worked in the function below
-
-
-
-
 
 #################   
 #  Step 4
@@ -189,15 +156,117 @@ for (m in 1:100) {
 
 ###### Creating function
 
-# Attempt 1: includes code from Steps 1-2 above; does not calculate magnitude of backsliding episodes
+# Attempt 1
+backslide <- function(df, x, new.column) {
+  df <- as.df.frame(df)
+  x <- df$x
+  new.column <- length(nrow(df))
+  df <- df %>% group_by(country_id) %>% mutate(new.column = x - lag(x))
+}
 
-# df =  data frame
-# x =  democracy variable
-# group_var =  variable to group by when using dplyr
-# neg.threshold =  size of democratic decline that starts (and continues) a backsliding episode
-# pos.threshold =  size of democratic increase that stops a backsliding episode 
-# stagnation =  period of years that democracy can stagnate (not decrease below neg.threshold or increase above pos.threshold) before the backsliding episode ends
+backslide(df = vdem, x = v2x_polyarchy, new.column = "diff")
 
+
+# Attempt 2: Trying again, without "new.column" argument
+backslide <- function(df, x) {
+  df <- as.df.frame(df)
+  x <- df$x
+  df <- df %>% group_by(country_id) %>% mutate(diff = x - lag(x))
+}
+
+backslide(df = vdem, x = "v2x_polyarchy")
+
+
+
+
+
+# This worked
+backslide <- function(df, x, group_var) {
+  group_var <- enquo(group_var)
+  print(group_var)
+  
+  x <- enquo(x)
+  print(x)
+  
+  df <- df %>%
+    group_by(!!group_var) %>%
+    mutate(diff = !!x - lag(!!x))
+  
+  
+  
+  return(df)
+}
+
+vdem3 <- backslide(vdem2, v2x_polyarchy, country_id)
+
+ 
+# Adding decline variable  *worked :-)
+backslide <- function(df, x, group_var, neg.threshold, pos.threshold) {
+  group_var <- enquo(group_var)
+  print(group_var)
+  
+  x <- enquo(x)
+  print(x)
+  
+  df <- df %>%
+    group_by(!!group_var) %>%
+    mutate(diff = !!x - lag(!!x))
+  
+  df2 <- df %>% 
+    group_by(!!group_var) %>%
+    mutate(decline = case_when(diff <= -neg.threshold ~ 1,
+                               diff >= pos.threshold ~ 2,
+                               TRUE ~ 0))
+  
+  return(df2)
+}
+
+vdem4 <- backslide(vdem2, v2x_polyarchy, country_id, 0.02, 0.03)
+
+table(vdem4$decline)
+
+
+# Adding loop *worked :-)
+backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation) {
+  group_var <- enquo(group_var)
+  print(group_var)
+  
+  x <- enquo(x)
+  print(x)
+  
+  df <- df %>%
+    group_by(!!group_var) %>%
+    mutate(diff = !!x - lag(!!x))
+  
+  df <- df %>% 
+    group_by(!!group_var) %>%
+    mutate(decline = case_when(diff <= -neg.threshold ~ 1,
+                               diff >= pos.threshold ~ 2,
+                               TRUE ~ 0))
+  
+  df$episode <- df$decline
+  for (i in 2:nrow(df)) {
+    next.three <- df$decline[i:(i + stagnation)]
+    if (df$episode[i] == 0) {
+      if (df$episode[i - 1] == 1 & any(next.three == 1)) {
+        df$episode[i] <- 1
+          if ((df$decline[i] == 0) & (((df$decline[i + 1] == 2 | df$decline[i + 2] == 2) & (df$decline[i + 1] != 1) ) ) ) {
+            df$episode[i] <- 0
+        }
+      }
+    }
+  }
+  
+  return(df)
+}
+
+vdem5 <- backslide(vdem2, v2x_polyarchy, country_id, 0.01, 0.02, 3)
+
+table(vdem5$episode)
+table(vdem$episode)
+
+
+# Adding code for 99s and replacing 2's with 0's *worked :-)
 backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation) {
   group_var <- enquo(group_var)
   print(group_var)
@@ -235,14 +304,16 @@ backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation
   return(df)
 }
 
-new.df <- backslide(vdem, v2x_polyarchy, country_id, 0.01, 0.02, 3)
+vdem6 <- backslide(vdem2, v2x_polyarchy, country_id, 0.01, 0.02, 3)
+
+table(vdem6$episode)
+table(vdem$episode)
 
 
+rm(backslide)
 
-# Attempt 2: Adding calculation of episode magnitudes  
-# The code for the two loops that I added generates the following error: Error in df$episodesize[j] <- dd : replacement has length zero
-# Can't figure out what's going wrong...the code works above, just not when it gets put into the function
-
+# Adding calculation of episode magnitudes  
+debug(backslide)
 backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation) {
   group_var <- enquo(group_var)
   print(group_var)
@@ -273,13 +344,19 @@ backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation
     }
   }
   
-  df$episode[is.na(df$diff)] <- 99
+   df$episode[is.na(df$diff)] <- 99
   
-  df$episode[df$episode == 2] <- 0
+   df$episode[df$episode == 2] <- 0
   
   df$episodesize <- 0 # creating new empty column
   
   # running loop for episodes lasting 1 year (not working)
+  df <- df %>% 
+    group_by(!!group_var) %>%
+    mutate(episode.size = case_when(episode == 1 ~ x - ,
+                               diff >= pos.threshold ~ 2,
+                               TRUE ~ 0))
+  
   for (j in 2:nrow(df)) {
     if (df$episode[j] == 1 & df$episode[j + 1] != 1 & df$episode[j - 1] == 0) {
       dd <- df$x[j] - df$x[j-1]
@@ -287,20 +364,20 @@ backslide <- function(df, x, group_var, neg.threshold, pos.threshold, stagnation
     }
   }
   
-  # running nested loop for all other episodes (not working)
+  # running nested loop for episodes
   for (m in 1:100) {
-    for (i in 2:nrow(df)) {
-      leads <- df$episode[i:(i + m)]
-      if (df$episode[i] == 1 & df$episode[i - 1] != 1 && all(leads == 1))  {
-        dd <- df$x[i + m] - df$x[i - 1]
-        df$episodesize[i + m] <- dd
+    for (i in 2:nrow(vdem)) {
+      leads <- vdem$episode[i:(i + m)]
+      if (vdem$episode[i] == 1 & vdem$episode[i - 1] != 1 && all(leads == 1))  {
+        dd <- vdem$v2x_polyarchy[i + m] - vdem$v2x_polyarchy[i - 1]
+        vdem$ep.diff2[i + m] <- dd
       }
     }
   }
-  
+
   return(df)
 }
 
-new.df2 <- backslide(vdem2, v2x_polyarchy, country_id, 0.01, 0.02, 3)
+vdem7 <- backslide(vdem2, v2x_polyarchy, country_id, 0.01, 0.02, 3)
 
 
